@@ -118,4 +118,5 @@ class ManejadorMat:
             # Retorna el contenido (la matriz numérica) asociada a esa llave
             return self.datos[llave_principal]
         return None
-    
+
+        
