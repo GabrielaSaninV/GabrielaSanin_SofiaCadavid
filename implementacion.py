@@ -295,7 +295,49 @@ def main():
                 print("Llaves encontradas (whosmat):")
                 for item in info:
                     print(f"Nombre: {item[0]}, Tamaño: {item[1]}, Tipo: {item[2]}")
+                # Frecuencia de muestreo (se asume 1kHz si no se especifica en el archivo mat)
+                fs = 1000
 
+                # Submenú de procesos
+                print("\n--- SUBMENÚ DE PROCESAMIENTO ---")
+                print("a. Sumar 3 canales (Segmento específico y gráfico 2D)")
+                print("b. Promedio y Desviación Estándar (Análisis 3D)")
+                opcion = input("Elija una opción (a/b): ").lower()
+
+                if opcion == 'a':
+                    try:
+                        # Solicitar parámetros al usuario para el método graficar_suma_canales
+                        ch1 = int(input("Ingrese índice del canal 1: "))
+                        ch2 = int(input("Ingrese índice del canal 2: "))
+                        ch3 = int(input("Ingrese índice del canal 3: "))
+                        p_min = int(input("Punto mínimo (en muestras): "))
+                        p_max = int(input("Punto máximo (en muestras): "))
+
+                        # Llamar al nuevo método de la clase ManejadorMat
+                        manejador.graficar_suma_canales(ch1, ch2, ch3, p_min, p_max, fs=fs)
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese números enteros para los índices y puntos.")
+                    except Exception as e:
+                        print(f"Ocurrió un error durante la graficación: {e}")
+
+                elif opcion == 'b':
+                    try:
+                        # Solicitar parámetro al usuario para el método graficar_promedio_desviacion
+                        eje = int(input("Elegir eje para promediar (0, 1 o 2): "))
+
+                        # Llamar al nuevo método de la clase ManejadorMat
+                        manejador.graficar_promedio_desviacion(eje)
+                    except ValueError:
+                        print("Entrada inválida. Por favor, ingrese un número entero para el eje.")
+                    except Exception as e:
+                        print(f"Ocurrió un error durante la graficación: {e}")
+                else:
+                    print("Opción no válida. Por favor, elija 'a' o 'b'.")
+
+                # Preguntar si desea continuar o salir del bucle principal
+                continuar = input("\n¿Desea analizar otro archivo .mat o realizar otra operación? (s/n): ").lower()
+                if continuar != 's':
+                    break
         elif menuppal == 3:
             break
         else:
