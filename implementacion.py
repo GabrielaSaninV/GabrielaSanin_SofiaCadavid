@@ -295,6 +295,10 @@ def main():
                 print("Llaves encontradas (whosmat):")
                 for item in info:
                     print(f"Nombre: {item[0]}, Tamaño: {item[1]}, Tipo: {item[2]}")
-                    
+
+        elif menuppal == 3:
+            break
+        else:
+            print("Opción inválida. Por favor, elija una opción válida.")                    
 if __name__ == "__main__":
     main()
