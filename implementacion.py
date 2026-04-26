@@ -264,11 +264,37 @@ def main():
                 else:
                     print("Opción no válida, intente de nuevo.") # Mensaje si la opción del menú principal es inválida.
         elif menuppal == 2:
-            pass
-        elif menuppal == 3:
-            break
-        else:
-            'Opcion invalida'
-            
+            while True:
+                archivos_disponibles = [f for f in os.listdir() if f.endswith('.mat')]
+                if not archivos_disponibles:
+                    print("No se encontraron archivos .mat en la carpeta actual.")
+                    continue # Continuar el bucle para permitir al usuario salir o reintentar
+
+                print("Archivos detectados:")
+                for i, nombre in enumerate(archivos_disponibles):
+                    print(f"{i+1}. {nombre}")
+
+                try:
+                    seleccion = int(input("Seleccione el número del archivo a cargar: ")) - 1
+                    if not (0 <= seleccion < len(archivos_disponibles)):
+                        print("Selección inválida. Por favor, ingrese un número dentro del rango.")
+                        continue
+                    nombre_archivo = archivos_disponibles[seleccion]
+                except ValueError:
+                    print("Entrada inválida. Por favor, ingrese un número.")
+                    continue
+
+                manejador = ManejadorMat(nombre_archivo)
+                if not manejador.cargar_archivo(): # Cargar el archivo al inicio.
+                    print(f"No se pudo procesar {nombre_archivo}. Seleccione otro archivo.")
+                    continue
+
+                print(f"\n--- Analizando: {nombre_archivo} ---")
+                info = manejador.obtener_info_llaves()
+
+                print("Llaves encontradas (whosmat):")
+                for item in info:
+                    print(f"Nombre: {item[0]}, Tamaño: {item[1]}, Tipo: {item[2]}")
+                    
 if __name__ == "__main__":
     main()
