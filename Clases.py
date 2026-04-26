@@ -40,3 +40,18 @@ class ManejadorMat:
             # En caso de error (archivo corrupto o no encontrado), avisa al usuario
             print(f"Error al cargar: {e}")
             return False
+        
+    def obtener_info_llaves(self):
+            """Devuelve la información de las llaves (nombre, tamaño, tipo)"""
+            # Retorna la lista con los metadatos obtenida por whosmat
+            return self.info
+
+    def obtener_matriz_principal(self):
+        """Extrae la primera matriz de datos detectada"""
+        if self.info and self.datos:
+            # info[0][0] extrae el nombre de la primera variable guardada en el archivo .mat
+            llave_principal = self.info[0][0]
+            # Retorna el contenido (la matriz numérica) asociada a esa llave
+            return self.datos[llave_principal]
+        return None
+    
