@@ -19,7 +19,7 @@ class CalAir:
             'ozono': {'nombre_visualizacion': 'Ozono', 'unidad': '(µg/m³)'},
             'co': {'nombre_visualizacion': 'Monóxido de Carbono', 'unidad': '(ppm)'}
         }
-    def obtener_nombre_y_unidades_visualizacion(self, nombre_columna):
+    def _obtener_nombre_y_unidades_visualizacion(self, nombre_columna):
             # Método que obtiene el nombre completo y las unidades de una columna para su uso en gráficos o salidas.
             # .get() permite obtener el valor de la clave; si la clave no existe, devuelve el segundo argumento (un diccionario por defecto).
             informacion = self._info_columnas.get(nombre_columna, {'nombre_visualizacion': nombre_columna, 'unidad': ''})
@@ -82,7 +82,134 @@ class CalAir:
             'co': 'Monóxido de Carbono'
         }, inplace=True)
         return estadisticas
+    
+    def graficar_df(self, data, indice_inicio=None, indice_fin=None, save_path=None):
+        if indice_inicio is not None and indice_fin is not None:
+            data_to_plot = data.iloc[indice_inicio:indice_fin+1]
+        else:
+            data_to_plot = data
+        fig, ejes = plt.subplots(1, 3, figsize=(18, 5))
 
+        texto_etiqueta_y = self.obtener_nombre_y_unidades_visualizacion(data.name)
+
+        ejes[0].plot(data_to_plot)
+        ejes[0].set_title('Gráfico de Líneas')
+        ejes[0].set_ylabel(texto_etiqueta_y)
+        ejes[0].set_xlabel('Índice de Dato') # Etiqueta x genérica para datos no temporales
+
+        ejes[1].hist(data_to_plot, bins=20)
+        ejes[1].set_title('Histograma')
+        ejes[1].set_xlabel(texto_etiqueta_y)
+        ejes[1].set_ylabel('Frecuencia')
+
+        ejes[2].boxplot(data_to_plot)
+        ejes[2].set_title('Diagrama de Caja')
+        ejes[2].set_ylabel(texto_etiqueta_y)
+        ejes[2].set_xlabel('') # No se necesita etiqueta x específica para boxplot
+
+        plt.tight_layout()
+        if save_path:
+            try:
+                plt.savefig(save_path)
+                print(f"Gráfico guardado en: {save_path}")
+            except Exception as e:
+                print(f"Error al guardar el gráfico: {e}")
+        plt.show()
+
+    def aplicar_operacion_apply(self, columna_origen, func_name, nombre_nueva_columna):
+        if columna_origen not in self._df.columns:
+            print(f"La columna '{columna_origen}' no existe.")
+            return None
+
+        try:
+            if func_name == 'cuadrado':
+                self._df[nombre_nueva_columna] = self._df[columna_origen].apply(lambda x: x**2)
+            elif func_name == 'raiz_cuadrada':
+                self._df[nombre_nueva_columna] = self._df[columna_origen].apply(lambda x: np.sqrt(x))
+            else:
+                print(f"Operación apply '{func_name}' no reconocida.")
+                return None
+            print(f"Operación apply '{func_name}' aplicada en la columna '{columna_origen}' exitosamente. Nueva columna: '{nombre_nueva_columna}'.")
+            return self._df[[columna_origen, nombre_nueva_columna]].head()
+        except Exception as e:
+            print(f"Error al aplicar la operación apply: {e}")
+            return None
+
+    def aplicar_operacion_map(self, columna_origen, func_name, nombre_nueva_columna):
+        if columna_origen not in self._df.columns:
+            print(f"La columna '{columna_origen}' no existe.")
+            return None
+
+        try:
+            if func_name == 'nivel_pm25':
+                intervalos = [-np.inf, 12.0, 35.4, 55.4, 150.4, 250.4, np.inf] # Bins ajustados para estándares de AQI de PM2.5
+                etiquetas = ['Bueno', 'Moderado', 'Poco Saludable para Grupos Sensibles', 'Poco Saludable', 'Muy Poco Saludable', 'Peligroso']
+                self._df[nombre_nueva_columna] = pd.cut(self._df[columna_origen], bins=intervalos, labels=etiquetas, right=True)
+            elif func_name == 'clasificar_co':
+                intervalos = [-np.inf, 4.4, 9.4, 12.4, 15.4, np.inf] # Bins ajustados para estándares de AQI de CO
+                etiquetas = ['Bueno', 'Moderado', 'Poco Saludable para Grupos Sensibles', 'Poco Saludable', 'Muy Poco Saludable']
+                self._df[nombre_nueva_columna] = pd.cut(self._df[columna_origen], bins=intervalos, labels=etiquetas, right=True)
+            else:
+                print(f"Operación map '{func_name}' no reconocida.")
+                return None
+            print(f"Operación map '{func_name}' aplicada en la columna '{columna_origen}' exitosamente. Nueva columna: '{nombre_nueva_columna}'.")
+            return self._df[[columna_origen, nombre_nueva_columna]].head()
+        except Exception as e:
+            print(f"Error al aplicar la operación map: {e}")
+            return None
+
+    def operar_columnas(self, col1, col2, operacion_texto, nombre_nueva_columna):
+        if col1 not in self._df.columns or col2 not in self._df.columns:
+            print("Una o ambas columnas no existen.")
+            return None
+
+        try:
+            if operacion_texto == 'suma':
+                self._df[nombre_nueva_columna] = self._df[col1] + self._df[col2]
+                print(f"Columnas '{col1}' y '{col2}' sumadas en '{nombre_nueva_columna}' exitosamente.")
+            elif operacion_texto == 'resta':
+                self._df[nombre_nueva_columna] = self._df[col1] - self._df[col2]
+                print(f"Columnas '{col1}' y '{col2}' restadas en '{nombre_nueva_columna}' exitosamente.")
+            else:
+                print("Operación no válida. Use 'suma' o 'resta'.")
+                return None
+            return self._df[[col1, col2, nombre_nueva_columna]].head()
+        except Exception as e:
+            print(f"Error al operar columnas: {e}")
+            return None
+
+    def remuestrear_y_graficar(self, columna, frecuencia, save_path=None):
+        if columna not in self._df.columns:
+            print(f"La columna '{columna}' no existe en el DataFrame.")
+            return
+        if not isinstance(self._df.index, pd.DatetimeIndex):
+            print("El DataFrame no tiene un índice de tipo fecha y hora. No se puede remuestrear.")
+            return
+
+        try:
+            # Remuestrear datos y tomar la media por período
+            datos_remuestreados = self._df[columna].resample(frecuencia).mean()
+            texto_etiqueta_y = self._obtener_nombre_y_unidades_visualizacion(columna)
+
+            fig, eje = plt.subplots(figsize=(12, 6))
+            eje.plot(datos_remuestreados)
+            eje.set_title(f'Gráfico de {self._obtener_nombre_y_unidades_visualizacion(columna)} Remuestreado a {frecuencia} (Promedio)')
+            eje.set_xlabel('Fecha')
+            eje.set_ylabel(texto_etiqueta_y)
+            plt.grid(True)
+            plt.tight_layout()
+
+            if save_path:
+                try:
+                    plt.savefig(save_path)
+                    print(f"Gráfico remuestreado guardado en: {save_path}")
+                except Exception as e:
+                    print(f"Error al guardar el gráfico remuestreado: {e}")
+            plt.show()
+
+        except Exception as e:
+            print(f"Error al remuestrear y graficar: {e}")
+            return
 class ManejadorMat:
     """Clase para manipular de forma modular e independiente archivos .mat"""
     
